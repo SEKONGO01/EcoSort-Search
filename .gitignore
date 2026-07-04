@@ -1,0 +1,16 @@
+# Environnements virtuels
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Dataset Kaggle (trop lourd pour Git)
+data/garbage-classification/
+data/*.zip
+
+# Env vars
+.env
+
+# OS / IDE
+.DS_Store
+.vscode/
