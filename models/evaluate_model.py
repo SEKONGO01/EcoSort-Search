@@ -11,7 +11,7 @@ model = tf.keras.models.load_model("models/modele_eco_sort.h5")
 
 test_datagen = ImageDataGenerator(rescale=1./255)
 test_generator = test_datagen.flow_from_directory(
-    "data/split/test",
+    "data/test",
     target_size=IMG_SIZE,
     batch_size=BATCH_SIZE,
     class_mode="categorical",
