@@ -20,14 +20,14 @@ train_datagen = ImageDataGenerator(
 val_test_datagen = ImageDataGenerator(rescale=1./255)
 
 train_generator = train_datagen.flow_from_directory(
-    "data/split/train",
+    "data/train",
     target_size=IMG_SIZE,
     batch_size=BATCH_SIZE,
     class_mode="categorical"
 )
 
 val_generator = val_test_datagen.flow_from_directory(
-    "data/split/val",
+    "data/val",
     target_size=IMG_SIZE,
     batch_size=BATCH_SIZE,
     class_mode="categorical"
