@@ -5,9 +5,9 @@ l'app le trouve sur Jumia, puis une IA (Deep Learning) prédit la bonne
 poubelle de tri (Jaune, Verte, Bleue, D3E, Marron/Noire).
 
 ## Statut
-🚧 En cours de développement — Jalon 1 : entraînement du modèle.
+🚧 En cours de développement 
 
 ## Équipe
-- SEKONGO — ML, backend, intégration, Docker
-- N'GOLONG — Data pipeline, frontend
-- KONE — Scraping
+- SEKONGO : ML, backend, intégration, Docker
+- N'GOLONG : Data pipeline, frontend
+- KONE : Scraping
