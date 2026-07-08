@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>EcoSort-Search</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>♻️ EcoSort-Search</h1>
+    <p>Recherchez un produit pour connaître sa consigne de tri.</p>
+    <form action="/search" method="GET">
+        <input type="text" name="keyword" placeholder="Ex: bouteille, smartphone..." required>
+        <button type="submit">Rechercher</button>
+    </form>
+</body>
+</html>
