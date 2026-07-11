@@ -9,5 +9,8 @@ poubelle de tri (Jaune, Verte, Bleue, D3E, Marron/Noire).
 
 ## Équipe
 - SEKONGO : ML, backend, intégration, Docker
-- N'GOLONG : Data pipeline, frontend
+- NGOLLONG : Data pipeline, frontend
 - KONE : Scraping
+- SEKONGO — ML, backend, intégration, Docker
+- NGOLLONG — Data pipeline, frontend
+- KONE — Scraping
