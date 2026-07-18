@@ -1,16 +1,520 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>EcoSort-Search</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta charset="UTF-8">
+<title>EcoSort-Search</title>
+<style>
+
+    #logo {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #1d1d1f;
+    letter-spacing: -0.3px;
+    z-index: 21;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+#logo.hidden { opacity: 0; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        background: #fafafa;
+        color: #1d1d1f;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- Barre de recherche ---- */
+    #search-wrapper {
+        position: fixed;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transition: top 0.4s ease, transform 0.4s ease;
+        width: 480px;
+        z-index: 20;
+    }
+    #search-wrapper.compact {
+        top: 56px;
+        transform: translate(-50%, 0);
+    }
+
+    #search-bubble {
+        background: #ffffff;
+        border: 1px solid #e5e5e7;
+        border-radius: 14px;
+        padding: 4px 4px 4px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    #search-bubble:focus-within {
+        border-color: #1d1d1f;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    #search-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #1d1d1f;
+        font-size: 1rem;
+        padding: 14px 0;
+    }
+    #search-input::placeholder { color: #a1a1a6; }
+
+    #search-btn {
+        background: #1d1d1f;
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background 0.15s ease;
+        flex-shrink: 0;
+    }
+    #search-btn:hover { background: #3a3a3c; }
+
+    #suggestions {
+        margin-top: 6px;
+        background: #ffffff;
+        border: 1px solid #e5e5e7;
+        border-radius: 14px;
+        overflow: hidden;
+        display: none;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    #suggestions.visible { display: block; }
+    .suggestion-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: background 0.1s ease;
+        text-align: left;
+        font-size: 0.9rem;
+        color: #48484a;
+        border-bottom: 1px solid #f0f0f2;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background: #f5f5f7; }
+
+    /* ---- Zone principale ---- */
+    #main-area {
+        display: none;
+        padding-top: 150px;
+        padding-left: 64px;
+        padding-right: 64px;
+        min-height: 100vh;
+        gap: 60px;
+        justify-content: space-between;
+    }
+    #main-area.visible { display: flex; }
+
+    #cards-column {
+        position: relative;
+        width: 260px;
+        height: 340px;
+    }
+
+    #cards-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255,255,255,0);
+        pointer-events: none;
+        transition: background 0.3s ease;
+        z-index: 40;
+    }
+    #cards-overlay.active {
+        background: rgba(255,255,255,0.85);
+        pointer-events: auto;
+        cursor: pointer;
+    }
+
+    .produit-card {
+        position: fixed;
+        width: 240px;
+        background: #ffffff;
+        color: #1d1d1f;
+        border: 1px solid #e5e5e7;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        cursor: pointer;
+        transition: left 0.35s ease, top 0.35s ease, transform 0.35s ease,
+                    box-shadow 0.2s ease, border-color 0.2s ease;
+        z-index: 45;
+    }
+    .produit-card img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        pointer-events: none;
+        background: #f5f5f7;
+    }
+    .produit-card p {
+        font-size: 0.85rem;
+        pointer-events: none;
+        line-height: 1.4;
+        color: #48484a;
+    }
+    .produit-card p strong {
+        color: #1d1d1f;
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+    .produit-card.selected {
+        border-color: #1d1d1f;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    }
+
+    /* ---- Panneau resultat ---- */
+    #result-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding-top: 10px;
+    }
+
+    #analyser-btn {
+        background: #1d1d1f;
+        color: white;
+        border: none;
+        padding: 13px 28px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        margin-bottom: 40px;
+        display: none;
+        transition: background 0.15s ease;
+    }
+    #analyser-btn:hover { background: #3a3a3c; }
+    #analyser-btn.visible { display: block; }
+
+    #bin-result {
+        display: none;
+        text-align: center;
+        animation: fadeIn 0.4s ease;
+    }
+    #bin-result.visible { display: block; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    #bin-result h2 {
+        margin: 24px 0 6px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #1d1d1f;
+    }
+    #bin-confidence {
+        color: #86868b;
+        font-size: 0.85rem;
+    }
+
+    .back-link {
+        position: fixed;
+        top: 22px;
+        left: 24px;
+        color: #86868b;
+        text-decoration: none;
+        font-size: 0.85rem;
+        z-index: 50;
+        display: none;
+        transition: color 0.15s ease;
+    }
+    .back-link:hover { color: #1d1d1f; }
+    .back-link.visible { display: block; }
+
+    /* ---- Loader ---- */
+    #loader {
+        display: none;
+        position: fixed;
+        top: 210px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 25;
+        text-align: center;
+    }
+    #loader.visible { display: block; }
+
+    .spinner {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #e5e5e7;
+        border-top-color: #1d1d1f;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text {
+        color: #86868b;
+        font-size: 0.85rem;
+    }
+
+    .btn-spinner {
+        display: inline-block;
+        width: 13px;
+        height: 13px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        vertical-align: middle;
+        margin-right: 8px;
+    }
+</style>
 </head>
 <body>
-    <h1>♻️ EcoSort-Search</h1>
-    <p>Recherchez un produit pour connaître sa consigne de tri.</p>
-    <form action="/search" method="GET">
-        <input type="text" name="keyword" placeholder="Ex: bouteille, smartphone..." required>
-        <button type="submit">Rechercher</button>
-    </form>
+<div id="logo">🌿 EcoSort-Search</div>
+<a href="#" id="back-link" class="back-link" onclick="resetApp(); return false;">← Nouvelle recherche</a>
+
+<div id="search-wrapper">
+    <div id="search-bubble">
+        <input type="text" id="search-input" placeholder="Rechercher un produit">
+        <button id="search-btn" onclick="lancerRecherche()">→</button>
+    </div>
+    <div id="suggestions"></div>
+</div>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <p class="loader-text">Recherche en cours</p>
+</div>
+
+<div id="cards-overlay"></div>
+
+<div id="main-area">
+    <div id="cards-column"></div>
+    <div id="result-panel">
+        <button id="analyser-btn" onclick="lancerPrediction()">Analyser ce produit</button>
+        <div id="bin-result">
+            <div id="bin-icon"></div>
+            <h2 id="bin-nom"></h2>
+            <p id="bin-confidence"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+let produitsActuels = [];
+let produitSelectionne = null;
+let eventailOuvert = false;
+
+const searchInput = document.getElementById("search-input");
+const suggestionsBox = document.getElementById("suggestions");
+const overlay = document.getElementById("cards-overlay");
+
+searchInput.addEventListener("input", async () => {
+    const q = searchInput.value.trim();
+    if (q.length < 2) {
+        suggestionsBox.classList.remove("visible");
+        return;
+    }
+    const res = await fetch(`/api/suggestions?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (data.length === 0) {
+        suggestionsBox.classList.remove("visible");
+        return;
+    }
+    suggestionsBox.innerHTML = data.map(s =>
+        `<div class="suggestion-item" onclick="choisirSuggestion('${s}')">${s}</div>`
+    ).join("");
+    suggestionsBox.classList.add("visible");
+});
+
+searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") lancerRecherche();
+});
+
+function choisirSuggestion(texte) {
+    searchInput.value = texte;
+    suggestionsBox.classList.remove("visible");
+    lancerRecherche();
+}
+
+async function lancerRecherche() {
+    const keyword = searchInput.value.trim();
+    if (!keyword) return;
+
+    suggestionsBox.classList.remove("visible");
+    document.getElementById("search-wrapper").classList.add("compact");
+    document.getElementById("back-link").classList.add("visible");
+    document.getElementById("main-area").classList.add("visible");
+    document.getElementById("loader").classList.add("visible");
+    document.getElementById("logo").classList.add("hidden");
+
+    try {
+        const res = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
+        produitsActuels = await res.json();
+        afficherCartes();
+    } finally {
+        document.getElementById("loader").classList.remove("visible");
+    }
+}
+
+function getStackBase() {
+    const rect = document.getElementById("cards-column").getBoundingClientRect();
+    return { left: rect.left, top: rect.top };
+}
+
+function afficherCartes() {
+    document.querySelectorAll(".produit-card").forEach(c => c.remove());
+    const base = getStackBase();
+
+    produitsActuels.forEach((p, i) => {
+        const card = document.createElement("div");
+        card.className = "produit-card";
+        card.dataset.index = i;
+        card.innerHTML = `
+            <img src="${p.image_url}" alt="">
+            <p><strong>${p.nom}</strong>${p.prix || ""}</p>
+        `;
+        card.style.left = (base.left + i * 8) + "px";
+        card.style.top = base.top + "px";
+        card.style.zIndex = produitsActuels.length - i;
+
+        card.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!eventailOuvert) {
+                ouvrirEventail();
+            } else {
+                choisirCarte(i, card);
+            }
+        });
+
+        document.body.appendChild(card);
+    });
+}
+
+function ouvrirEventail() {
+    eventailOuvert = true;
+    overlay.classList.add("active");
+
+    const cards = document.querySelectorAll(".produit-card");
+    const n = cards.length;
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const espacement = 195;
+    const largeurTotale = (n - 1) * espacement;
+
+    cards.forEach((card, i) => {
+        card.classList.add("fanned");
+        const x = centerX - largeurTotale / 2 + i * espacement - 94;
+        card.style.left = x + "px";
+        card.style.top = (centerY - 135) + "px";
+        card.style.zIndex = 100 + i;
+    });
+}
+
+function refermerEventail(selectedEl) {
+    eventailOuvert = false;
+    overlay.classList.remove("active");
+
+    const base = getStackBase();
+    const cards = document.querySelectorAll(".produit-card");
+
+    cards.forEach((card, i) => {
+        card.classList.remove("selected");
+        card.classList.remove("fanned");
+        card.style.left = (base.left + i * 8) + "px";
+        card.style.top = base.top + "px";
+        card.style.zIndex = produitsActuels.length - i;
+    });
+
+    if (selectedEl) {
+        selectedEl.classList.add("selected");
+        selectedEl.style.zIndex = 200;
+    }
+}
+
+function choisirCarte(index, cardEl) {
+    produitSelectionne = produitsActuels[index];
+    refermerEventail(cardEl);
+
+    document.getElementById("bin-result").classList.remove("visible");
+    document.getElementById("analyser-btn").classList.add("visible");
+}
+
+overlay.addEventListener("click", () => {
+    if (eventailOuvert) refermerEventail(null);
+});
+
+async function lancerPrediction() {
+    if (!produitSelectionne) return;
+    const btn = document.getElementById("analyser-btn");
+    btn.innerHTML = `<span class="btn-spinner"></span>Analyse en cours`;
+    btn.style.pointerEvents = "none";
+
+    try {
+        const params = new URLSearchParams({
+            image_url: produitSelectionne.image_url,
+            nom: produitSelectionne.nom
+        });
+        const res = await fetch(`/api/predict?${params}`);
+        const data = await res.json();
+        afficherResultat(data);
+    } finally {
+        btn.textContent = "Analyser ce produit";
+        btn.style.pointerEvents = "auto";
+    }
+}
+
+function afficherResultat(data) {
+    document.getElementById("bin-nom").textContent = data.bin_nom;
+    document.getElementById("bin-confidence").textContent = data.confidence
+        ? `Confiance du modèle : ${(data.confidence * 100).toFixed(1)}%`
+        : "";
+    document.getElementById("bin-icon").innerHTML = creerIconePoubelle(data.bin_couleur);
+    document.getElementById("bin-result").classList.add("visible");
+}
+
+function resetApp() {
+    document.querySelectorAll(".produit-card").forEach(c => c.remove());
+    document.getElementById("search-wrapper").classList.remove("compact");
+    document.getElementById("main-area").classList.remove("visible");
+    document.getElementById("back-link").classList.remove("visible");
+    document.getElementById("bin-result").classList.remove("visible");
+    document.getElementById("analyser-btn").classList.remove("visible");
+    document.getElementById("logo").classList.remove("hidden");
+    overlay.classList.remove("active");
+    eventailOuvert = false;
+    searchInput.value = "";
+    produitSelectionne = null;
+}
+
+function creerIconePoubelle(couleur) {
+    return `
+    <svg viewBox="0 0 120 170" width="120" height="165">
+        <ellipse cx="60" cy="32" rx="42" ry="7" fill="${couleur}" opacity="0.3"/>
+        <rect x="42" y="10" width="36" height="14" rx="5" fill="${couleur}"/>
+        <path d="M22 34 L30 148 Q31 156 39 156 L81 156 Q89 156 90 148 L98 34 Z"
+              fill="none" stroke="${couleur}" stroke-width="3.5"/>
+        <line x1="45" y1="50" x2="43" y2="140" stroke="${couleur}" stroke-width="2.5" opacity="0.55"/>
+        <line x1="60" y1="50" x2="60" y2="142" stroke="${couleur}" stroke-width="2.5" opacity="0.55"/>
+        <line x1="75" y1="50" x2="77" y2="140" stroke="${couleur}" stroke-width="2.5" opacity="0.55"/>
+    </svg>`;
+}
+</script>
 </body>
 </html>
