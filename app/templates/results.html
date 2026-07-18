@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultats - EcoSort-Search</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Résultats pour "{{ keyword }}"</h1>
+    <a href="/">← Nouvelle recherche</a>
+
+    {% if produits %}
+        <div class="produits-grid">
+        {% for produit in produits %}
+            <a href="/predict?image_url={{ produit.image_url | urlencode }}&nom={{ produit.nom | urlencode }}" style="text-decoration: none; color: inherit;">
+                <div class="produit-card">
+                    <img src="{{ produit.image_url }}" alt="{{ produit.nom }}">
+                    <p><strong>{{ produit.nom }}</strong></p>
+                    <p>{{ produit.prix }}</p>
+                </div>
+            </a>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p>Aucun produit trouvé.</p>
+    {% endif %}
+</body>
+</html>
